@@ -56,6 +56,13 @@ object Currency {
   private def newUnitView(coreUnit: core.CurrencyUnit): UnitView =
     UnitView(coreUnit.getName, coreUnit.getSymbol, coreUnit.getCode, coreUnit.getNumberOfDecimal)
 
+  /**
+    * Exhaustive pattern matching to be able to get warning for newly added WalletType
+    * Return UnsupportedNetworkParamsView than throw unsupported exception.
+    * Lib core gives all the coins it supports when asked from WalletPool,
+    * some of them may not be supported yet by wallet daemon. So, throwing
+    * an exception here prevents people to list even supported coin.
+    */
   private def newNetworkParamsView(coreCurrency: core.Currency): NetworkParamsView = coreCurrency.getWalletType match {
     case core.WalletType.BITCOIN => Bitcoin.newNetworkParamsView(coreCurrency.getBitcoinLikeNetworkParameters)
     case core.WalletType.ETHEREUM => EthereumNetworkParamView(coreCurrency.getEthereumLikeNetworkParameters)
