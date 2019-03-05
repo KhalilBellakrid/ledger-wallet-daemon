@@ -8,12 +8,18 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import scala.collection.JavaConverters._
 
 object Currency {
+
   implicit class RichCoreCurrency(val c: core.Currency) extends AnyVal {
     def concatSig(sig: Array[Byte]): Array[Byte] = Currency.concatSig(c)(sig)
+
     def parseUnsignedBTCTransaction(rawTx: Array[Byte], currentHeight: Long): Either[String, core.BitcoinLikeTransaction] = Currency.parseUnsignedBTCTransaction(c)(rawTx, currentHeight)
+
     def parseUnsignedETHTransaction(rawTx: Array[Byte]): Either[String, core.EthereumLikeTransaction] = Currency.parseUnsignedETHTransaction(c)(rawTx)
+
     def validateAddress(address: String): Boolean = Currency.validateAddress(c)(address)
+
     def convertAmount(amount: BigInt): core.Amount = Currency.convertAmount(c)(amount)
+
     def currencyView: CurrencyView = Currency.currencyView(c)
   }
 
@@ -53,9 +59,14 @@ object Currency {
   private def newNetworkParamsView(coreCurrency: core.Currency): NetworkParamsView = coreCurrency.getWalletType match {
     case core.WalletType.BITCOIN => Bitcoin.newNetworkParamsView(coreCurrency.getBitcoinLikeNetworkParameters)
     case core.WalletType.ETHEREUM => EthereumNetworkParamView(coreCurrency.getEthereumLikeNetworkParameters)
-    case _ => throw new UnsupportedOperationException
+    case core.WalletType.RIPPLE =>
+      UnsupportedNetworkParamsView("RIPPLE", "wallet type RIPPLE is not supported by wallet daemon")
+    case core.WalletType.MONERO =>
+      UnsupportedNetworkParamsView("MONERO", "wallet type MONERO is not supported by wallet daemon")
   }
 }
+
+case class UnsupportedNetworkParamsView(walletType: String, error: String) extends NetworkParamsView
 
 case class CurrencyView(
                          @JsonProperty("name") name: String,
