@@ -178,7 +178,7 @@ object Account extends Logging {
           }
           tx <- a.asBitcoinLikeAccount().buildTransaction(false)
             .sendToAddress(c.convertAmount(ti.amount), ti.recipient)
-            .pickInputs(BitcoinLikePickingStrategy.MERGE_OUTPUTS, UnsignedInteger.MAX_VALUE.intValue())
+            .pickInputs(BitcoinLikePickingStrategy.OPTIMIZE_SIZE, UnsignedInteger.MAX_VALUE.intValue())
             .setFeesPerByte(feesPerByte)
             .build()
           v <- Bitcoin.newUnsignedTransactionView(tx, feesPerByte.toBigInt.asScala)
