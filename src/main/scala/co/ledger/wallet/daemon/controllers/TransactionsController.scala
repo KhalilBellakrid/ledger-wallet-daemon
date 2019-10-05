@@ -1,6 +1,6 @@
 package co.ledger.wallet.daemon.controllers
 
-import co.ledger.core.RippleLikeMemo
+import co.ledger.core.{BitcoinLikePickingStrategy, RippleLikeMemo}
 import co.ledger.wallet.daemon.async.MDCPropagatingExecutionContext
 import co.ledger.wallet.daemon.controllers.requests.{CommonMethodValidations, RequestWithUser}
 import co.ledger.wallet.daemon.models.{AccountInfo, FeeMethod}
@@ -130,12 +130,13 @@ object TransactionsController {
                                          fees_per_byte: Option[String],
                                          fees_level: Option[String],
                                          amount: String,
+                                         picking_strategy: Option[String],
                                          exclude_utxos: Option[Map[String, Int]]
                                         ) extends CreateTransactionRequest {
     def amountValue: BigInt = BigInt(amount)
     def feesPerByteValue: Option[BigInt] = fees_per_byte.map(BigInt(_))
 
-    def transactionInfo: BTCTransactionInfo = BTCTransactionInfo(recipient, feesPerByteValue, fees_level, amountValue, exclude_utxos.getOrElse(Map[String, Int]()))
+    def transactionInfo: BTCTransactionInfo = BTCTransactionInfo(recipient, feesPerByteValue, fees_level, amountValue, picking_strategy, exclude_utxos.getOrElse(Map[String, Int]()))
 
     @MethodValidation
     def validateFees: ValidationResult = CommonMethodValidations.validateFees(feesPerByteValue, fees_level)
@@ -159,8 +160,14 @@ object TransactionsController {
 
   trait TransactionInfo
 
-  case class BTCTransactionInfo(recipient: String, feeAmount: Option[BigInt], feeLevel: Option[String], amount: BigInt, excludeUtxos: Map[String, Int]) extends TransactionInfo {
+  case class BTCTransactionInfo(recipient: String, feeAmount: Option[BigInt], feeLevel: Option[String], amount: BigInt, UTXOPickingStrategy: Option[String], excludeUtxos: Map[String, Int]) extends TransactionInfo {
     lazy val feeMethod: Option[FeeMethod] = feeLevel.map { level => FeeMethod.from(level) }
+    lazy val pickingStrategy: Option[BitcoinLikePickingStrategy] = UTXOPickingStrategy.map {
+        case "DEEP_OUTPUTS_FIRST" => BitcoinLikePickingStrategy.DEEP_OUTPUTS_FIRST
+        case "OPTIMIZE_SIZE" => BitcoinLikePickingStrategy.OPTIMIZE_SIZE
+        case "MERGE_OUTPUTS" => BitcoinLikePickingStrategy.MERGE_OUTPUTS
+        case others => throw new Exception(s"Unknown picking strategy $others")
+    }
   }
 
   case class ETHTransactionInfo(recipient: String, amount: BigInt, gasLimit: Option[BigInt], gasPrice: Option[BigInt], contract: Option[String]) extends TransactionInfo
