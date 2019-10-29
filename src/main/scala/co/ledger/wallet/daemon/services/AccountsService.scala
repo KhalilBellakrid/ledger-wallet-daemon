@@ -147,6 +147,16 @@ class AccountsService @Inject()(daemonCache: DaemonCache) extends DaemonService 
           }
         }
     }
+  
+  def getBatchedERC20Operations(accountInfo: AccountInfo, offset: Long, batch: Int): Future[List[OperationView]] =
+    daemonCache.withAccountAndWallet(accountInfo) {
+      case (account, wallet) =>
+        account.batchedErc20Operations(offset, batch).flatMap { operations =>
+          operations.traverse { case (coreOp, erc20Op) =>
+            Operations.getErc20View(erc20Op, coreOp, wallet, account)
+          }
+        }
+    }
 
   def getTokenAccounts(accountInfo: AccountInfo): Future[List[ERC20AccountView]] =
     daemonCache.withAccount(accountInfo) { account =>
