@@ -151,7 +151,7 @@ object Account extends Logging {
 
   def batchedErc20Operations(contract: String, a: core.Account, offset: Long, batch: Int)(implicit ec: ExecutionContext): Future[List[(core.Operation, core.ERC20LikeOperation)]] =
     asERC20Account(contract, a).liftTo[Future].flatMap(erc20Acc => batchedErc20Operations(erc20Acc, offset, batch))
-  
+
   def batchedErc20Operations(a: core.Account, offset: Long, batch: Int)(implicit ec: ExecutionContext): Future[List[(core.Operation, core.ERC20LikeOperation)]] =
     for {
       account <- asETHAccount(a).liftTo[Future]
@@ -162,7 +162,7 @@ object Account extends Logging {
   private def batchedErc20Operations(a: core.ERC20LikeAccount, offset: Long, batch: Int)(implicit ec: ExecutionContext): Future[List[(core.Operation, core.ERC20LikeOperation)]] =
     a.queryOperations().offset(offset).limit(batch).complete().execute().map(_.asScala.toList).map { coreOps =>
       val hashToCoreOps = coreOps.map(coreOp => coreOp.asEthereumLikeOperation().getTransaction.getHash -> coreOp).toMap
-      val erc20Ops = a.getOperations.asScala.toList
+      val erc20Ops = a.getOperations.asScala.toList.filter(erc20Op => coreOps.exists(op => op.asEthereumLikeOperation().getTransaction.getHash.equals(erc20Op.getHash)))
       erc20Ops.map(erc20Op => (hashToCoreOps(erc20Op.getHash), erc20Op))
     }
 
