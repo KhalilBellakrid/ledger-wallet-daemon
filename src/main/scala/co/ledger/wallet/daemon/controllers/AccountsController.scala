@@ -101,7 +101,7 @@ class AccountsController @Inject()(accountsService: AccountsService) extends Con
         info(s"GET account operations $request")
         request.contract match {
           case Some(contract) =>
-            accountsService.getERC20Operations(TokenAccountInfo(contract, request.accountInfo))
+            accountsService.getBatchedERC20Operations(TokenAccountInfo(contract, request.accountInfo), request.offset, request.batch)
           case None =>
             accountsService.accountOperations(OperationQueryParams(request.previous, request.next, request.batch, request.full_op), request.accountInfo)
         }
@@ -188,6 +188,7 @@ class AccountsController @Inject()(accountsService: AccountsService) extends Con
 
 object AccountsController {
   private val DEFAULT_BATCH: Int = 20
+  private val DEFAULT_OFFSET: Long = 0
   private val DEFAULT_OPERATION_MODE: Int = 0
 
 
@@ -298,6 +299,7 @@ object AccountsController {
                                 @RouteParam override val account_index: Int,
                                 @QueryParam next: Option[UUID],
                                 @QueryParam previous: Option[UUID],
+                                @QueryParam offset: Long = DEFAULT_OFFSET,
                                 @QueryParam batch: Int = DEFAULT_BATCH,
                                 @QueryParam full_op: Int = DEFAULT_OPERATION_MODE,
                                 @QueryParam contract: Option[String],
