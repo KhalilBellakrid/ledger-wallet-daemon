@@ -101,7 +101,7 @@ class AccountsController @Inject()(accountsService: AccountsService) extends Con
         info(s"GET account operations $request")
         request.contract match {
           case Some(contract) =>
-            accountsService.getERC20Operations(TokenAccountInfo(contract, request.accountInfo))
+            accountsService.getBatchedERC20Operations(TokenAccountInfo(contract, request.accountInfo), request.offset, request.batch)
           case None =>
             accountsService.accountOperations(OperationQueryParams(request.previous, request.next, request.batch, request.full_op), request.accountInfo)
         }
@@ -179,7 +179,7 @@ class AccountsController @Inject()(accountsService: AccountsService) extends Con
 
       // given token address, get the operations on this token
       get("/tokens/:token_address/operations") { request: TokenAccountRequest =>
-        accountsService.getERC20Operations(request.tokenAccountInfo)
+        accountsService.getBatchedERC20Operations(request.tokenAccountInfo, request.offset, request.batch)
       }
     }
   }
@@ -188,6 +188,7 @@ class AccountsController @Inject()(accountsService: AccountsService) extends Con
 
 object AccountsController {
   private val DEFAULT_BATCH: Int = 20
+  private val DEFAULT_OFFSET: Long = 0
   private val DEFAULT_OPERATION_MODE: Int = 0
 
 
@@ -272,6 +273,8 @@ object AccountsController {
                                   @RouteParam wallet_name: String,
                                   @RouteParam account_index: Int,
                                   @RouteParam token_address: String,
+                                  @QueryParam offset: Long = DEFAULT_OFFSET,
+                                  @QueryParam batch: Int = DEFAULT_BATCH,
                                   request: Request
                                 )
     extends BaseSingleAccountRequest with WithTokenAccountInfo
@@ -298,6 +301,7 @@ object AccountsController {
                                 @RouteParam override val account_index: Int,
                                 @QueryParam next: Option[UUID],
                                 @QueryParam previous: Option[UUID],
+                                @QueryParam offset: Long = DEFAULT_OFFSET,
                                 @QueryParam batch: Int = DEFAULT_BATCH,
                                 @QueryParam full_op: Int = DEFAULT_OPERATION_MODE,
                                 @QueryParam contract: Option[String],

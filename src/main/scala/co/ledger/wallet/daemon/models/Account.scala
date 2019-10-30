@@ -41,6 +41,9 @@ object Account extends Logging {
     def erc20Operations(implicit ec: ExecutionContext): Future[List[(core.Operation, core.ERC20LikeOperation)]] =
       Account.erc20Operations(a)
 
+    def batchedErc20Operations(contract: String, limit: Long, batch: Int)(implicit ec: ExecutionContext): Future[List[(core.Operation, core.ERC20LikeOperation)]] =
+      Account.batchedErc20Operations(contract, a, limit, batch)
+
     def batchedErc20Operations(limit: Long, batch: Int)(implicit ec: ExecutionContext): Future[List[(core.Operation, core.ERC20LikeOperation)]] =
       Account.batchedErc20Operations(a, limit, batch)
 
@@ -146,6 +149,9 @@ object Account extends Logging {
       erc20Ops.map(erc20Op => (hashToCoreOps(erc20Op.getHash), erc20Op))
     }
 
+  def batchedErc20Operations(contract: String, a: core.Account, offset: Long, batch: Int)(implicit ec: ExecutionContext): Future[List[(core.Operation, core.ERC20LikeOperation)]] =
+    asERC20Account(contract, a).liftTo[Future].flatMap(erc20Acc => batchedErc20Operations(erc20Acc, offset, batch))
+  
   def batchedErc20Operations(a: core.Account, offset: Long, batch: Int)(implicit ec: ExecutionContext): Future[List[(core.Operation, core.ERC20LikeOperation)]] =
     for {
       account <- asETHAccount(a).liftTo[Future]
