@@ -1,10 +1,19 @@
 database_engine = "sqlite3"
+core_database_engine = "sqlite3"
+core_database_engine = ${?CORE_DATABASE_ENGINE}${?DATABASE_ENGINE}
 
 sqlite3 = {
   url = "jdbc:sqlite:database.db"
   url = ${?WALLET_JDBC_URL}
   driver = "org.sqlite.JDBC"
   connectionPool = disabled
+}
+
+postgres = {
+    url = "postgres://localhost:5432"
+    url = ${?PG_URL}
+    pool_size = 2
+    pool_size = ${?PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL}
 }
 
 proxy = {

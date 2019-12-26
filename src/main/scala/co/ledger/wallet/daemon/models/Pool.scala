@@ -18,11 +18,13 @@ import co.ledger.wallet.daemon.services.LogMsgMaker
 import co.ledger.wallet.daemon.utils.{HexUtils, Utils}
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.twitter.inject.Logging
+import com.typesafe.config.ConfigFactory
 import org.bitcoinj.core.Sha256Hash
 
 import scala.collection.JavaConverters._
 import scala.collection._
 import scala.concurrent.Future
+import scala.util.Try
 
 class Pool(private val coreP: core.WalletPool, val id: Long) extends Logging {
   private[this] val self = this
@@ -261,14 +263,23 @@ class Pool(private val coreP: core.WalletPool, val id: Long) extends Logging {
 }
 
 object Pool {
+  private val config = ConfigFactory.load()
+
   def newInstance(coreP: core.WalletPool, id: Long): Pool = {
     new Pool(coreP, id)
   }
 
   def newCoreInstance(poolDto: PoolDto): Future[core.WalletPool] = {
     val poolConfig = core.DynamicObject.newInstance()
-    //    poolConfig.putString("BLOCKCHAIN_OBSERVER_WS_ENDPOINT", "ws://notification.explorers.dev.aws.ledger.fr:9000/ws/{}")
-    //    poolConfig.putString("BLOCKCHAIN_OBSERVER_ENGINE", "LEDGER_API")
+    val dbBackend = Try(config.getString("core_database_engine")).toOption.getOrElse("sqlite3") match {
+      case "postgres" => {
+        poolConfig.putString("DATABASE_NAME", s"${config.getString("postgres.url")}/${poolDto.name}")
+        poolConfig.putBoolean("USE_PG_DATABASE", true)
+        core.DatabaseBackend.getPostgreSQLBackend(config.getInt("postgres.pool_size"))
+      }
+      case _ => core.DatabaseBackend.getSqlite3Backend
+    }
+
     core.WalletPoolBuilder.createInstance()
       .setHttpClient(ClientFactory.httpClient)
       .setWebsocketClient(ClientFactory.webSocketClient)
@@ -276,7 +287,7 @@ object Pool {
       .setThreadDispatcher(ClientFactory.threadDispatcher)
       .setPathResolver(new ScalaPathResolver(corePoolId(poolDto.userId, poolDto.name)))
       .setRandomNumberGenerator(new SecureRandomRNG)
-      .setDatabaseBackend(core.DatabaseBackend.getSqlite3Backend)
+      .setDatabaseBackend(dbBackend)
       .setConfiguration(poolConfig)
       .setName(poolDto.name)
       .build()
