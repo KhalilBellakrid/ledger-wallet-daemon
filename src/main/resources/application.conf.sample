@@ -1,6 +1,6 @@
 database_engine = "sqlite3"
 core_database_engine = "sqlite3"
-core_database_engine = ${?CORE_DATABASE_ENGINE}${?DATABASE_ENGINE}
+core_database_engine = ${?CORE_DATABASE_ENGINE}
 
 sqlite3 = {
   url = "jdbc:sqlite:database.db"

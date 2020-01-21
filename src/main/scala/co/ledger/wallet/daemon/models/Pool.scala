@@ -272,11 +272,9 @@ object Pool {
   def newCoreInstance(poolDto: PoolDto): Future[core.WalletPool] = {
     val poolConfig = core.DynamicObject.newInstance()
     val dbBackend = Try(config.getString("core_database_engine")).toOption.getOrElse("sqlite3") match {
-      case "postgres" => {
+      case "postgres" =>
         poolConfig.putString("DATABASE_NAME", s"${config.getString("postgres.url")}/${poolDto.name}")
-        poolConfig.putBoolean("USE_PG_DATABASE", true)
         core.DatabaseBackend.getPostgreSQLBackend(config.getInt("postgres.pool_size"))
-      }
       case _ => core.DatabaseBackend.getSqlite3Backend
     }
 
