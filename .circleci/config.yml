@@ -57,6 +57,7 @@ jobs:
     steps:
       - checkout
       - restore_cache: *dependencies_cache
+      - command: apt-get install -yq libpq-dev
       - run:
           name: Run integration tests
           command: sbt -Dsbt.ivy.home=.ivy2 -sbt-dir .sbt it:test
